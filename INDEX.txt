@@ -1,0 +1,517 @@
+
+
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin &amp; Supervisor System (Firebase Enabled)</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<!-- Firebase (compat) SDKs for easier migration -->
+<style>
+        /* Light mode support */
+        .light-mode body, .light-mode {
+            background: #f7f7f7;
+            color: #111;
+        }
+        .light-mode .system-panel {
+            background: #ffffff;
+            border-color: #222;
+        }
+        .light-mode .btn-primary { background: #0077ff; color: #fff; border-color:#005bbb; }
+        .light-mode .btn-success { background: #28a745; color:#fff; }
+        .light-mode .btn-warning { background: #ffc107; color:#000; }
+        .light-mode .btn-danger  { background: #dc3545; color:#fff; }
+        .light-mode input, .light-mode select, .light-mode textarea {
+            background:#fff; color:#000; border-color:#333;
+        }
+        .light-mode .text-neon-blue, .light-mode .text-neon-green, .light-mode .text-neon-yellow, .light-mode .text-neon-red {
+            color: #111 !important;
+        }
+        .light-mode .station-card.occupied {
+            border-color:#ff3333; background-color:#ffe5e5;
+        }
+        .light-mode .station-card.unoccupied {
+            border-color:#00cc00; background-color:#e6ffe6;
+        }
+        .light-mode .station-card.needs-maintenance {
+            border-color:#cccc00; background-color:#ffffe6;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #1a1a1a;
+            color: #00ff00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        .container {
+            width: 100%;
+            max-width: 1200px;
+        }
+        .system-panel {
+            background-color: #000000;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            animation: terminalGlow 2s infinite alternate;
+        }
+        @keyframes terminalGlow {
+            from { box-shadow: 0 0 5px #00ff00; }
+            to { box-shadow: 0 0 15px #00ff00; }
+        }
+        .login-card {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        input, select, textarea {
+            background-color: #0d0d0d;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 0.75rem;
+            width: 100%;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            box-shadow: inset 0 0 5px #00ff0080;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        button {
+            background-color: #00aaff;
+            color: #000000;
+            font-weight: bold;
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #00aaff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button.btn-primary { background-color: #00aaff; border-color: #00aaff; }
+        button.btn-danger { background-color: #ff3333; border-color: #ff3333; }
+        button.btn-warning { background-color: #ffff33; border-color: #ffff33; color: #000; }
+        button.btn-success { background-color: #00cc00; border-color: #00cc00; }
+        button:hover {
+            filter: brightness(1.2);
+            box-shadow: 0 0 10px;
+        }
+        .text-neon-blue { color: #00aaff; }
+        .text-neon-green { color: #00ff00; }
+        .text-neon-red { color: #ff3333; }
+        .text-neon-yellow { color: #ffff33; }
+        .flex-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .flex-container > div {
+            flex: 1;
+            min-width: 400px;
+        }
+        .grid-container {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
+        .station-card {
+            border: 1px dashed #00ff00;
+            padding: 1rem;
+            text-align: center;
+        }
+        .station-card.occupied {
+            border-color: #ff3333;
+            background-color: rgba(255, 51, 51, 0.1);
+        }
+        .station-card.unoccupied {
+            border-color: #00cc00;
+            background-color: rgba(0, 204, 0, 0.1);
+        }
+        .station-card.needs-maintenance {
+            border-color: #ffff33;
+            background-color: rgba(255, 255, 51, 0.1);
+        }
+        .chat-container {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #00ff00;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .chat-message {
+            max-width: 75%;
+            padding: 0.5rem;
+            border: 1px solid;
+        }
+        .chat-message.admin {
+            align-self: flex-end;
+            background-color: rgba(0, 170, 255, 0.2);
+            border-color: #00aaff;
+        }
+        .chat-message.supervisor {
+            align-self: flex-start;
+            background-color: rgba(0, 204, 0, 0.2);
+            border-color: #00cc00;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #000;
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            padding: 2rem;
+            z-index: 1000;
+            color: #00ff00;
+            display: none;
+        }
+        .broadcast-message {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff3333;
+            color: #000;
+            font-weight: bold;
+            padding: 1rem 2rem;
+            border: 2px solid #000;
+            box-shadow: 0 0 15px #ff3333;
+            z-index: 2000;
+            display: none;
+            animation: pulseGlow 1s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 5px #ff3333; }
+            to { box-shadow: 0 0 20px #ff3333; }
+        }
+        .report-section {
+            background-color: #0d0d0d;
+            padding: 1rem;
+            border: 1px solid #00ff00;
+            margin-top: 1rem;
+        }
+        .password-strength {
+            font-size: 0.8rem;
+            margin-top: -0.5rem;
+            margin-bottom: 0.5rem;
+            text-align: left;
+        }
+        .password-strength.weak { color: #ff3333; }
+        .password-strength.medium { color: #ffff33; }
+        .password-strength.strong { color: #00cc00; }
+        .blinking-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #ff3333;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 5px;
+            animation: blink 1s linear infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .kiosk-card {
+            background-color: #000000;
+            border: 1px solid #00ff00;
+            padding: 1rem;
+            text-align: center;
+        }
+    
+/* Dropdown menu */
+.menu { position: relative; display: inline-block; }
+.menu-button { padding: 0.5rem 1rem; border: 1px solid #00ff00; background: transparent; color: #00ff00; cursor: pointer; }
+.menu-content { display:none; position:absolute; right:0; background:#000; border:1px solid #00ff00; min-width:200px; z-index:1000; }
+.menu-content a, .menu-content button { display:block; width:100%; text-align:left; padding:0.5rem 0.75rem; background:transparent; color:#00ff00; border:none; cursor:pointer; }
+.menu.show .menu-content { display:block; }
+.toast { position: fixed; right: 1rem; bottom: 1rem; background:#111; border:1px solid #00ff00; color:#00ff00; padding:0.75rem 1rem; z-index: 2000; box-shadow: 0 0 10px #00ff00; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/docx@8.0.1/build/index.umd.js"></script><script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script></head>
+<body>
+<div class="container"><div class="system-panel" id="system-health" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:0.5rem;"><span class="text-neon-yellow">SYSTEM HEALTH: </span><span class="text-neon-green" id="health-status">Checking...</span></div>
+<div class="broadcast-message" id="broadcast-message">
+<p id="broadcast-text"></p>
+<button onclick="dismissBroadcast()" style="background: #000; color: #ff3333; border-color: #ff3333;">DISMISS</button>
+</div>
+<div class="system-panel login-card" id="login-screen">
+<h1 class="text-neon-green text-3xl font-bold mb-4 text-center">ACCESS TERMINAL</h1>
+<p class="text-center text-neon-green mb-4" id="welcome-message"></p>
+<div class="flex flex-col items-center mb-6">
+<div class="p-4 rounded-full mb-2 border-2 border-dashed border-neon-green">
+<svg class="lucide lucide-terminal-square" fill="none" height="48" stroke="#00ff00" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="48" xmlns="http://www.w3.org/2000/svg"><path d="m7 11 2 2 4-4"></path><rect height="18" rx="2" width="18" x="3" y="3"></rect></svg>
+</div>
+</div>
+<div class="flex justify-center mb-8">
+<button class="btn-primary w-1/3" id="show-admin-login-btn">ADMIN</button>
+<button class="btn-success w-1/3" id="show-supervisor-login-btn">SUPERVISOR</button>
+<button class="btn-warning w-1/3" id="show-kiosk-btn">KIOSK</button>
+</div>
+<form id="admin-login-form">
+<h2 class="text-neon-blue text-center mb-4">ADMIN LOGIN</h2>
+<input id="admin-username" placeholder="Username" required="" type="text"/>
+<input id="admin-password" placeholder="Password" required="" type="password"/>
+<input id="admin-secret-code" placeholder="Secret Code" required="" type="password"/>
+<button class="btn-primary w-full" type="submit">LOG IN</button>
+<p class="text-center text-neon-red mt-2" id="admin-login-message"></p>
+</form>
+<form id="supervisor-login-form" style="display:none;">
+<h2 class="text-neon-green text-center mb-4">SUPERVISOR LOGIN</h2>
+<input id="supervisor-id" placeholder="ID" required="" type="text"/>
+<input id="supervisor-password" placeholder="Password" required="" type="password"/>
+<button class="btn-success w-full" type="submit">LOG IN</button>
+<button class="btn-warning w-full mt-2" id="forgot-password-btn" type="button">FORGOT PASSWORD?</button>
+<p class="text-center text-neon-red mt-2" id="supervisor-login-message"></p>
+</form>
+</div>
+<div id="admin-dashboard" style="display:none;">
+<div class="flex-container mt-2" id="admin-quick-nav">
+<div class="menu"><button class="menu-button" id="admin-menu-btn">Menu</button><div class="menu-content" id="admin-menu"><button onclick="openChangePasswordModal()">Change Password</button><button onclick="logout()">Logout</button><button onclick='scrollToSection("admin-chat")'>Chat</button><button onclick='scrollToSection("admin-reports")'>Generate Report</button></div></div><div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+<button class="btn-primary" onclick="scrollToSection('admin-register-student')">Register Student</button>
+<button class="btn-primary" onclick="scrollToSection('admin-register-supervisor')">Register Supervisor</button>
+<button class="btn-primary" onclick="scrollToSection('admin-user-management')">User Management</button>
+<button class="btn-primary" onclick="scrollToSection('admin-activities')">Activities &amp; Reports</button>
+<button class="btn-primary" onclick="scrollToSection('admin-station-status')">Station Status</button>
+<button class="btn-primary" onclick="scrollToSection('admin-chat')">Chat</button>
+<button class="btn-warning" onclick="toggleTheme()">Toggle Theme</button>
+</div>
+<div id="supervisor-on-duty" style="margin-left:auto; font-size:0.9rem;">
+<span class="text-neon-yellow">SUPERVISOR ON DUTY:</span>
+<span class="text-neon-green" id="supervisor-on-duty-details">None</span>
+</div>
+</div>
+<div class="system-panel">
+<div class="flex-container">
+<h1 class="text-neon-blue text-3xl font-bold">ADMIN DASHBOARD</h1>
+<button class="btn-danger" id="admin-logout-btn">LOGOUT</button>
+</div>
+<div class="flex-container mt-4">
+<div class="system-panel">
+<h2 class="text-neon-blue text-2xl font-bold mb-4" id="admin-register-student">REGISTER STUDENT</h2>
+<form id="student-register-form">
+<input id="student-name" placeholder="Student Name" required="" type="text"/>
+<input id="student-id" placeholder="Student ID" required="" type="text"/>
+<input id="student-hostel" placeholder="Hostel.Room" required="" type="text"/>
+<input id="student-program" placeholder="Program of Study" required="" type="text"/>
+<input id="student-year" placeholder="Year of Study" required="" type="number"/>
+<label class="text-neon-green">PHOTO UPLOAD</label>
+<input id="student-photo" type="file"/>
+<button class="btn-primary w-full mt-4" type="submit">REGISTER</button>
+<p class="text-center mt-2" id="student-register-message"></p>
+</form>
+</div>
+<div class="system-panel">
+<h2 class="text-neon-blue text-2xl font-bold mb-4" id="admin-register-supervisor">REGISTER SUPERVISOR</h2>
+<form id="supervisor-register-form">
+<input id="supervisor-name" placeholder="Supervisor Name" required="" type="text"/>
+<input id="supervisor-reg-id" placeholder="ID" required="" type="text"/>
+<input id="supervisor-email" placeholder="Email" required="" type="email"/>
+<input id="supervisor-reg-password" placeholder="Password" required="" type="password"/>
+<div class="password-strength" id="supervisor-password-strength"></div>
+<label class="text-neon-green">PHOTO UPLOAD</label>
+<input id="supervisor-photo" type="file"/>
+<button class="btn-primary w-full mt-4" type="submit">REGISTER</button>
+<p class="text-center mt-2" id="supervisor-register-message"></p>
+</form>
+</div>
+</div>
+<div class="system-panel mt-4">
+<h2 class="text-neon-blue text-2xl font-bold mb-4" id="admin-user-management">USER MANAGEMENT</h2>
+<!-- Search removed by request --><input id="user-search-input" type="hidden" value=""/>
+<div id="user-list"></div>
+</div>
+<div class="system-panel mt-4">
+<h2 class="text-neon-blue text-2xl font-bold mb-4" id="admin-activities">SYSTEM ACTIVITIES &amp; REPORTS</h2>
+<div class="flex-container">
+<div class="system-panel">
+<h3 class="text-xl text-neon-green">ACTIVITY LOG</h3><button class="btn-warning mt-2" onclick="clearLogsIfAllowed()">CLEAR LOGS (7-day limit)</button>
+<ul id="activity-log" style="height: 150px; overflow-y: auto;"></ul>
+</div>
+<div class="system-panel">
+<h3 class="text-xl text-neon-green">REPORT SUMMARY</h3>
+<p>TOTAL SUPERVISORS: <span id="report-supervisors">0</span></p>
+<p>TOTAL STUDENTS: <span id="report-students">0</span></p>
+<p>TOTAL STATIONS: <span id="report-total-stations">0</span></p>
+<p>OCCUPIED STATIONS: <span id="report-occupied-stations">0</span></p>
+<p>UNOCCUPIED STATIONS: <span id="report-unoccupied-stations">0</span></p>
+<button class="btn-success mt-2" onclick="generateReport()">GENERATE REPORT</button>
+<button class="btn-success mt-2" onclick="downloadReportPDF()">DOWNLOAD PDF</button><button class="btn-primary mt-2" onclick="downloadReportDocx()">DOWNLOAD WORD</button></div>
+</div><div class="system-panel"><h3 class="text-xl text-neon-green">AUDIT TRAIL</h3><table border="1" id="audit-table" style="width:100%; border-collapse: collapse; font-size:0.9rem;"><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody id="audit-body"></tbody></table></div>
+</div>
+<div class="system-panel mt-4">
+<h2 class="text-neon-blue text-2xl font-bold mb-4">CUSTOM REPORTS</h2>
+<form id="custom-report-form">
+<label class="text-neon-green" for="report-start-date">Start Date:</label>
+<input id="report-start-date" type="date"/>
+<label class="text-neon-green" for="report-end-date">End Date:</label>
+<input id="report-end-date" type="date"/>
+<label class="text-neon-green">Select Metrics:</label>
+<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem;">
+<label><input checked="" name="metric" type="checkbox" value="mostUsed"/> Most Used Stations</label>
+<label><input checked="" name="metric" type="checkbox" value="leastUsed"/> Least Used Stations</label>
+<label><input name="metric" type="checkbox" value="averageSession"/> Average Session Time</label>
+</div>
+<button class="btn-primary w-full" type="submit">GENERATE CUSTOM REPORT</button>
+</form>
+<div class="report-section" id="custom-report-output" style="display: none;"></div>
+</div>
+<div class="system-panel mt-4">
+<h2 class="text-neon-blue text-2xl font-bold mb-4" id="admin-station-status">STATION STATUS</h2>
+<div class="grid-container" id="station-status-admin"></div>
+</div>
+<div class="system-panel mt-4">
+<h2 class="text-neon-blue text-2xl font-bold mb-4">EMERGENCY BROADCAST</h2>
+<form id="broadcast-form">
+<textarea id="broadcast-message-input" placeholder="Type urgent message here..." required="" rows="2"></textarea>
+<button class="btn-danger w-full mt-2" type="submit">SEND BROADCAST</button>
+</form>
+</div>
+<div class="system-panel mt-4">
+<div style="display: flex; align-items: center; gap: 1rem;">
+<h2 class="text-neon-blue text-2xl font-bold" id="admin-chat">CHAT WITH SUPERVISORS</h2>
+<span class="blinking-dot" id="admin-chat-notification" style="display:none;"></span>
+</div>
+<div class="chat-container" id="admin-chat-box"></div>
+<form id="admin-chat-form" style="display:flex; gap: 1rem; margin-top: 1rem;">
+<input id="admin-chat-input" placeholder="&gt; TYPE MESSAGE..." required="" style="flex-grow: 1;" type="text"/>
+<button class="btn-primary" type="submit">SEND</button>
+</form>
+</div>
+</div>
+</div>
+<div id="supervisor-dashboard" style="display:none;">
+<div class="flex-container mt-2" id="supervisor-quick-nav">
+<div class="menu"><button class="menu-button" id="sup-menu-btn">Menu</button><div class="menu-content" id="sup-menu"><button onclick="openChangePasswordModal()">Change Password</button><button onclick="logout()">Logout</button><button onclick='scrollToSection("sup-chat")'>Chat</button></div></div><div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+<button class="btn-primary" onclick="scrollToSection('sup-assign')">Assign Station</button>
+<button class="btn-primary" onclick="scrollToSection('sup-status')">Station Status</button>
+<button class="btn-primary" onclick="scrollToSection('sup-report')">Report Issue</button>
+<button class="btn-primary" onclick="scrollToSection('sup-chat')">Chat</button>
+<button class="btn-warning" onclick="toggleTheme()">Toggle Theme</button>
+</div>
+</div>
+<div class="system-panel">
+<div class="flex-container">
+<div style="display: flex; align-items: center; gap: 1rem;">
+<div id="supervisor-profile-photo" style="width: 48px; height: 48px; border-radius: 50%; border: 1px dashed #00ff00; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #333;">
+<svg class="lucide lucide-user" fill="none" height="32" stroke="#00ff00" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="32" xmlns="http://www.w3.org/2000/svg"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+</div>
+<h1 class="text-neon-green text-3xl font-bold">SUPERVISOR DASHBOARD</h1>
+</div>
+<div style="display:flex; gap: 1rem;">
+<button class="btn-primary" id="supervisor-change-password-btn">CHANGE PASSWORD</button>
+<button class="btn-danger" id="supervisor-logout-btn">LOGOUT</button>
+</div>
+</div>
+<div class="flex-container mt-4">
+<div class="system-panel">
+<h2 class="text-neon-green text-2xl font-bold mb-4" id="sup-assign">ASSIGN STATION</h2>
+<form id="station-assignment-form">
+<select id="station-select" required="">
+<option value="">SELECT A STATION</option>
+</select>
+<input id="student-lookup-input" placeholder="ENTER STUDENT ID OR NAME" required="" type="text"/>
+<div id="student-profile-preview" style="display: none; align-items: center; gap: 1rem; margin-top: 1rem;">
+<img alt="Student Photo" id="student-photo-preview" src="" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 1px dashed #00ff00;"/>
+<div id="student-details-preview"></div>
+</div>
+<label class="text-neon-green">Session Duration (minutes)</label>
+<input id="session-duration" min="15" placeholder="e.g., 60" required="" type="number" value="60"/>
+<p class="text-center mt-2" id="station-assignment-message"></p>
+<button class="btn-success w-full mt-4" type="submit">ASSIGN STATION</button>
+</form>
+</div>
+<div class="system-panel">
+<h2 class="text-neon-green text-2xl font-bold mb-4" id="sup-status">STATION STATUS</h2>
+<div class="grid-container" id="station-status-supervisor"></div>
+</div>
+</div>
+<div class="flex-container mt-4">
+<div class="system-panel">
+<h2 class="text-neon-green text-2xl font-bold mb-4" id="sup-report">REPORT STATION ISSUES</h2>
+<form id="issue-report-form">
+<select id="issue-station-select" required="">
+<option value="">SELECT STATION</option>
+</select>
+<select id="issue-type" required="">
+<option value="">SELECT ISSUE TYPE</option>
+<option value="Needs Maintenance">Needs Maintenance</option>
+<option value="Out of Service">Out of Service</option>
+</select>
+<textarea id="issue-description" placeholder="DESCRIBE THE ISSUE..." required="" rows="4"></textarea>
+<button class="btn-warning w-full mt-4" type="submit">REPORT ISSUE</button>
+</form>
+</div>
+<div class="system-panel">
+<div style="display: flex; align-items: center; gap: 1rem;">
+<h2 class="text-neon-green text-2xl font-bold mb-4" id="sup-chat">CHAT WITH ADMIN</h2>
+<span class="blinking-dot" id="supervisor-chat-notification" style="display:none;"></span>
+</div>
+<div class="chat-container" id="supervisor-chat-box"></div>
+<form id="supervisor-chat-form" style="display:flex; gap: 1rem; margin-top: 1rem;">
+<input id="supervisor-chat-input" placeholder="&gt; REPLY TO ADMIN..." required="" style="flex-grow: 1;" type="text"/>
+<button class="btn-success" type="submit">REPLY</button>
+</form>
+</div>
+</div>
+</div>
+</div>
+<div id="kiosk-screen" style="display:none;">
+<div class="system-panel">
+<div class="flex-container">
+<h1 class="text-neon-yellow text-3xl font-bold">STUDENT KIOSK</h1>
+<button class="btn-warning" id="kiosk-back-btn">BACK TO LOGIN</button>
+</div>
+<div class="system-panel mt-4">
+<h2 class="text-neon-yellow text-2xl font-bold mb-4">STATION STATUS OVERVIEW</h2>
+<div class="grid-container" id="kiosk-station-list"></div>
+</div>
+</div>
+</div>
+<div class="message-box" id="password-reset-modal">
+<h3 class="text-neon-yellow text-2xl mb-4">RESET PASSWORD</h3>
+<form id="password-reset-form">
+<input id="reset-name" placeholder="Name" required="" type="text"/>
+<input id="reset-id" placeholder="ID" required="" type="text"/>
+<input id="reset-old-password" placeholder="Current Password" required="" type="password"/>
+<input id="reset-new-password" placeholder="New Password" required="" type="password"/>
+<button class="btn-warning w-full mt-4" type="submit">RESET PASSWORD</button>
+<button class="btn-danger w-full mt-2" id="cancel-reset-btn" type="button">CANCEL</button>
+<p class="text-center text-neon-red mt-2" id="reset-message"></p>
+</form>
+</div>
+<div class="message-box" id="password-change-modal">
+<h3 class="text-neon-blue text-2xl mb-4">CHANGE PASSWORD</h3>
+<form id="password-change-form">
+<input id="current-password" placeholder="Current Password" required="" type="password"/>
+<input id="new-password" placeholder="New Password" required="" type="password"/>
+<div class="password-strength" id="new-password-strength"></div>
+<button class="btn-primary w-full mt-4" type="submit">CHANGE PASSWORD</button>
+<button class="btn-danger w-full mt-2" id="cancel-change-btn" type="button">CANCEL</button>
+<p class="text-center text-neon-red mt-2" id="change-password-message"></p>
+</form>
+</div>
+<div class="message-box" id="user-detail-modal" style="max-width: 600px;">
+<h3 class="text-neon-blue text-2xl mb-4" id="user-modal-title"></h3>
+<form id="edit-user-form">
+<div id="user-modal-content"></div>
+<button class="btn-primary w-full mt-4" type="submit">SAVE CHANGES</button>
+<button class="btn-danger w-full mt-2" onclick="closeModal('user-detail-modal')" type="button">CLOSE</button>
+</form>
+</div>
+</div>
+
+<!-- Removed incomplete inline script and included app scripts -->
+<script src="supabase-adapter.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
