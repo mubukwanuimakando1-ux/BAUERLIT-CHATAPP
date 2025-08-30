@@ -242,11 +242,8 @@
             const email = e.target['admin-username'].value.trim(); // Your form uses 'admin-username' as the email input
             const password = e.target['admin-password'].value;
             try {
-                // Use Supabase authentication directly
-                const { data, error } = await auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
+                // Use the correct Firebase-style function name
+                const { data, error } = await auth.signInWithEmailAndPassword(email, password);
 
                 if (error) {
                     throw error;
@@ -271,11 +268,8 @@
             const email = `${id}@kmu.com`; // Construct email from the ID
             const password = e.target['supervisor-password'].value;
             try {
-                // Attempt Supabase authentication first
-                const { data, error } = await auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
+                // Attempt Supabase authentication first using the correct function name
+                const { data, error } = await auth.signInWithEmailAndPassword(email, password);
 
                 if (error) {
                     // if auth fails, check lockout status from Firestore for a helpful message
