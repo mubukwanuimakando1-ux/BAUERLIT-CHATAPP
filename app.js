@@ -239,37 +239,28 @@
         adminLoginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             adminLoginMessage.textContent = '';
-            const username = e.target['admin-username'].value.trim();
+            const email = e.target['admin-username'].value.trim(); // Your form uses 'admin-username' as the email input
             const password = e.target['admin-password'].value;
-            const secretCodeInput = e.target['admin-secret-code'].value.trim();
             try {
-                const settingsRef = db.collection('meta').doc('adminSettings');
-                const settingsDoc = await settingsRef.get();
-                if (!settingsDoc.exists) {
-                    adminLoginMessage.textContent = 'ADMIN SETTINGS NOT CONFIGURED. CHECK FIRESTORE meta/adminSettings.';
-                    return;
+                // Use Supabase authentication directly
+                const { data, error } = await auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    throw error;
                 }
-                adminSettings = settingsDoc.data();
-                // check username and secret code, then sign in using the stored email
-                if (username !== adminSettings.username) {
-                    adminLoginMessage.textContent = 'INVALID USERNAME.';
-                    return;
-                }
-                if (secretCodeInput !== String(adminSettings.secretCode)) {
-                    adminLoginMessage.textContent = 'INVALID SECRET CODE.';
-                    return;
-                }
-                // sign in with Firebase Auth using admin email
-                await auth.signInWithEmailAndPassword(adminSettings.email, password);
-                currentUser = { role: 'admin', uid: auth.currentUser.uid, name: adminSettings.username };
                 
+                // If login is successful, set the current user and navigate to the dashboard
+                currentUser = { role: 'admin', uid: data.user.id, name: 'Admin' };
                 
                 showScreen('admin-dashboard');
                 attachRealtimeListeners();
                 logActivity('Admin logged in.');
             } catch (err) {
                 console.error(err);
-                adminLoginMessage.textContent = err.message || 'LOGIN FAILED.';
+                adminLoginMessage.textContent = err.message || 'LOGIN FAILED. Check your email and password.';
             }
         });
 
@@ -277,39 +268,48 @@
             e.preventDefault();
             supervisorLoginMessage.textContent = '';
             const id = e.target['supervisor-id'].value.trim();
+            const email = `${id}@kmu.com`; // Construct email from the ID
             const password = e.target['supervisor-password'].value;
             try {
-                // find supervisor document by ID (we store supervisor reg-id in doc.id field)
+                // Attempt Supabase authentication first
+                const { data, error } = await auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    // if auth fails, check lockout status from Firestore for a helpful message
+                    const supDoc = await db.collection('supervisors').doc(id).get();
+                    if (supDoc.exists) {
+                         const sup = supDoc.data();
+                         const now = Date.now();
+                         const lockUntil = sup.lockUntil ? sup.lockUntil.toMillis ? sup.lockUntil.toMillis() : sup.lockUntil : null;
+                         if (lockUntil && lockUntil > now) {
+                            const mins = Math.ceil((lockUntil - now) / 60000);
+                            supervisorLoginMessage.textContent = `ACCOUNT LOCKED. TRY AGAIN IN ${mins} MINUTE(S).`;
+                            return;
+                         }
+                    }
+                    throw error;
+                }
+
+                // If login is successful, get the supervisor's details from Firestore
                 const supDoc = await db.collection('supervisors').doc(id).get();
                 if (!supDoc.exists) {
-                    supervisorLoginMessage.textContent = 'INVALID ID OR PASSWORD.';
+                    supervisorLoginMessage.textContent = 'SUPERVISOR PROFILE NOT FOUND. CONTACT ADMIN.';
+                    await auth.signOut();
                     return;
                 }
                 const sup = supDoc.data();
                 if (sup.isBlocked) {
                     supervisorLoginMessage.textContent = 'THIS ACCOUNT IS BLOCKED. CONTACT ADMIN.';
+                    await auth.signOut();
                     return;
                 }
-                // We require supervisors to have an auth account (created at registration)
-                if (!sup.authUid) {
-                    supervisorLoginMessage.textContent = 'SUPERVISOR AUTH ACCOUNT NOT FOUND. CONTACT ADMIN.';
-                    return;
-                }
-                
-                // lockout check
-                const now = Date.now();
-                const lockUntil = sup.lockUntil ? sup.lockUntil.toMillis ? sup.lockUntil.toMillis() : sup.lockUntil : null;
-                if (lockUntil && lockUntil > now) {
-                    const mins = Math.ceil((lockUntil - now) / 60000);
-                    supervisorLoginMessage.textContent = `ACCOUNT LOCKED. TRY AGAIN IN ${mins} MINUTE(S).`;
-                    return;
-                }
-                // attempt sign in using their auth email stored
-                await auth.signInWithEmailAndPassword(sup.email, password);
-                
+
                 // success: reset attempts
                 await db.collection('supervisors').doc(id).update({ failedAttempts: 0, lockUntil: null });
-                currentUser = { role: 'supervisor', uid: auth.currentUser.uid, id: id, name: sup.name, email: sup.email };
+                currentUser = { role: 'supervisor', uid: data.user.id, id: id, name: sup.name, email: sup.email };
                 await db.collection('meta').doc('supervisorOnDuty').set({ id, name: sup.name, email: sup.email, time: new Date() });
                 showScreen('supervisor-dashboard');
                 attachRealtimeListeners();
@@ -317,20 +317,7 @@
 
             } catch (err) {
                 console.error(err);
-                try {
-                    const supRef = db.collection('supervisors').doc(e.target['supervisor-id'].value.trim());
-                    const docx = await supRef.get();
-                    if (docx.exists) {
-                        const d = docx.data();
-                        const attempts = (d.failedAttempts || 0) + 1;
-                        let updates = { failedAttempts: attempts };
-                        if (attempts >= 3) {
-                            updates.lockUntil = new Date(Date.now() + 15*60000);
-                        }
-                        await supRef.update(updates);
-                    }
-                } catch (_e) {}
-                supervisorLoginMessage.textContent = err.message || 'LOGIN FAILED.';
+                supervisorLoginMessage.textContent = err.message || 'LOGIN FAILED. Check your ID and password.';
             }
         });
 
