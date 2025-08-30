@@ -245,8 +245,8 @@
                 // Use the correct Firebase-style function name
                 const { data, error } = await auth.signInWithEmailAndPassword(email, password);
 
-                if (error) {
-                    throw error;
+                if (error || !data || !data.user) {
+                    throw error || new Error('LOGIN FAILED. Invalid credentials or no user data.');
                 }
                 
                 // If login is successful, set the current user and navigate to the dashboard
@@ -271,7 +271,7 @@
                 // Attempt Supabase authentication first using the correct function name
                 const { data, error } = await auth.signInWithEmailAndPassword(email, password);
 
-                if (error) {
+                if (error || !data || !data.user) {
                     // if auth fails, check lockout status from Firestore for a helpful message
                     const supDoc = await db.collection('supervisors').doc(id).get();
                     if (supDoc.exists) {
@@ -284,7 +284,7 @@
                             return;
                          }
                     }
-                    throw error;
+                    throw error || new Error('LOGIN FAILED. Invalid credentials or no user data.');
                 }
 
                 // If login is successful, get the supervisor's details from Firestore
