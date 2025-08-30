@@ -1,8 +1,6 @@
-// app.js - extracted from your original system and adapted to initialize Supabase via the adapter
 
-// NOTE: The original firebaseConfig from your file has been preserved; below we added supabaseUrl and supabaseKey placeholders.
 
-// ---------- Firebase Configuration ----------
+
         const firebaseConfig = {
 
           apiKey: "AIzaSyDrjo_HDQ1RRkjA-zXgZtuFovI7zg2yma0",
@@ -14,9 +12,9 @@
           appId: "1:908284620214:web:e76e9a4757c162eea1a517",
           measurementId: "G-JEPQ1YMVNE"
         
-  // SUPABASE: add your supabase info below (added automatically)
-  supabaseUrl: 'https://YOUR-PROJECT-REF.supabase.co',
-  supabaseKey: 'YOUR-ANON-KEY',
+
+  supabaseUrl: 'https://vlbebvnoadcpkkrrdjiq.supabase.co',
+  supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsYmVidm5vYWRjcGtrcnJkamlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0ODI0ODQsImV4cCI6MjA3MjA1ODQ4NH0.uVzfaVMu7M8HdkpxbLeYzFFwwYWADt_97h0dz1pFiTo',
   storageBucket: 'app-bucket'
 
 };
