@@ -10,7 +10,7 @@
           storageBucket: "kmu-digita-rsc-mnt-system.appspot.com",
           messagingSenderId: "908284620214",
           appId: "1:908284620214:web:e76e9a4757c162eea1a517",
-          measurementId: "G-JEPQ1YMVNE"
+          measurementId: "G-JEPQ1YMVNE",
         
 
   supabaseUrl: 'https://vlbebvnoadcpkkrrdjiq.supabase.co',
